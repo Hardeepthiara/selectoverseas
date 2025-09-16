@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import com.selectoverseas.backend.model.Lead;
 import com.selectoverseas.backend.repository.LeadRepository;
+import com.selectoverseas.backend.service.EmailService;
 
 @RestController
 @RequestMapping("/api/leads")
@@ -17,12 +18,34 @@ public class LeadController {
 
     @Autowired
     private LeadRepository leadRepository;
-
+    @Autowired
+    private EmailService emailService;
+    
     @PostMapping
     public Lead addLead(@RequestBody Lead lead) {
-        return leadRepository.save(lead);
-    }
+        Lead savedLead = leadRepository.save(lead);
+        String subject = "New Lead Submitted: " + savedLead.getName();
+        String body = "Name: " + savedLead.getName() + "\n"
+                    + "Email: " + savedLead.getEmail() + "\n"
+                    + "Phone: " + savedLead.getPhone() + "\n"
+                    + "Message: " + savedLead.getMessage();
+        emailService.sendLeadNotification("hardeep02.study@gmail.com", subject, body);
+        
+        String userSubject = "Thank you for contacting Select Overseas!";
+        String userBody = "Hi " + savedLead.getName() + ",\n\n"
+                        + "Thank you for submitting your inquiry. Our team will contact you soon.\n\n"
+                        + "Here is a copy of your submission:\n"
+                        + "Phone: " + savedLead.getPhone() + "\n"
+                        + "Immigration Type: " + savedLead.getImmigrationType() + "\n"
+                        + "Country Preference: " + savedLead.getCountryPref() + "\n"
+                        + "Message: " + savedLead.getMessage() + "\n\n"
+                        + "Best regards,\nSelect Overseas Team";
+        emailService.sendLeadNotification(savedLead.getEmail(), userSubject, userBody);
 
+        return savedLead;
+    }
+	
+    
     @GetMapping
     public List<Lead> getLeads() {
         return leadRepository.findAll();
@@ -61,5 +84,6 @@ public class LeadController {
         public String getDateTime() { return dateTime; }
         public void setDateTime(String dateTime) { this.dateTime = dateTime; }
     }
-
+    
+    
 }
